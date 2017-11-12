@@ -57,7 +57,7 @@ import static org.reflections.util.Utils.*;
  * <pre>
  *      Reflections reflections = new Reflections("my.package.prefix");
  *      //or
- *      Reflections reflections = new Reflections(ClasspathHelper.forPackage("my.package.prefix"), 
+ *      Reflections reflections = new Reflections(ClasspathHelper.forPackage("my.package.prefix"),
  *            new SubTypesScanner(), new TypesAnnotationScanner(), new FilterBuilder().include(...), ...);
  *
  *       //or using the ConfigurationBuilder
@@ -86,7 +86,7 @@ import static org.reflections.util.Utils.*;
  *       Set&#60Member> methodUsage =      reflections.getMethodUsage(Method.class);
  *       Set&#60Member> constructorUsage = reflections.getConstructorUsage(Constructor.class);
  * </pre>
- * <p>You can use other scanners defined in Reflections as well, such as: SubTypesScanner, TypeAnnotationsScanner (both default), 
+ * <p>You can use other scanners defined in Reflections as well, such as: SubTypesScanner, TypeAnnotationsScanner (both default),
  * ResourcesScanner, MethodAnnotationsScanner, ConstructorAnnotationsScanner, FieldAnnotationsScanner,
  * MethodParameterScanner, MethodParameterNamesScanner, MemberUsageScanner or any custom scanner.
  * <p>Use {@link #getStore()} to access and query the store directly
@@ -180,8 +180,8 @@ public class Reflections {
             return;
         }
 
-        if (log != null && log.isDebugEnabled()) {
-            log.debug("going to scan these urls:\n" + Joiner.on("\n").join(configuration.getUrls()));
+        if (log != null) {
+            log.debug("going to scan these urls:\n{}", Joiner.on("\n").join(configuration.getUrls()));
         }
 
         long time = System.currentTimeMillis();
@@ -194,7 +194,9 @@ public class Reflections {
                 if (executorService != null) {
                     futures.add(executorService.submit(new Runnable() {
                         public void run() {
-                            if (log != null && log.isDebugEnabled()) log.debug("[" + Thread.currentThread().toString() + "] scanning " + url);
+                            if (log != null) {
+                                log.debug("[{}] scanning {}", Thread.currentThread().toString(), url);
+                            }
                             scan(url);
                         }
                     }));
@@ -203,7 +205,9 @@ public class Reflections {
                 }
                 scannedUrls++;
             } catch (ReflectionsException e) {
-                if (log != null && log.isWarnEnabled()) log.warn("could not create Vfs.Dir from url. ignoring the exception and continuing", e);
+                if (log != null) {
+                    log.warn("could not create Vfs.Dir from url. ignoring the exception and continuing", e);
+                }
             }
         }
 
@@ -249,12 +253,14 @@ public class Reflections {
                     Object classObject = null;
                     for (Scanner scanner : configuration.getScanners()) {
                         try {
-                            if (scanner.acceptsInput(path) || scanner.acceptResult(fqn)) {
+                            if (scanner.acceptsInput(path) || scanner.acceptsInput(fqn)) {
                                 classObject = scanner.scan(file, classObject);
                             }
                         } catch (Exception e) {
-                            if (log != null && log.isDebugEnabled())
-                                log.debug("could not scan file " + file.getRelativePath() + " in url " + url.toExternalForm() + " with scanner " + scanner.getClass().getSimpleName(), e);
+                            if (log != null) {
+                                // SLF4J will filter out Throwables from the format string arguments.
+                                log.debug("could not scan file {} in url {} with scanner {}", file.getRelativePath(), url.toExternalForm(), scanner.getClass().getSimpleName(), e);
+                            }
                         }
                     }
                 }
@@ -378,7 +384,7 @@ public class Reflections {
             Sets.SetView<String> keys = Sets.difference(mmap.keySet(), Sets.newHashSet(mmap.values()));
             Multimap<String, String> expand = HashMultimap.create();
             for (String key : keys) {
-                final Class<?> type = forName(key);
+                final Class<?> type = forName(key, loaders());
                 if (type != null) {
                     expandSupertypes(expand, key, type);
                 }
